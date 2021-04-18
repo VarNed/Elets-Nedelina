@@ -1,0 +1,272 @@
+import vk_api
+from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
+import random
+from vk_api import VkUpload
+import datetime
+from towns import towns
+import requests
+import bs4
+
+
+TOKEN = '5dcb58237536c05ade911b2a585b63324dc52e638e1f909aaba639eb2f77c5c308dad8bebafc6916b1a16'
+
+
+vk = vk_api.VkApi(token=TOKEN)
+longpoll = VkBotLongPoll(vk, 204049974)
+upload = VkUpload(vk)
+session = requests.Session()
+
+
+def send_messages(id, text, attr=''):
+    random_id = random.randint(0,1000000)
+    if not attr:
+        vk.method('messages.send', {'chat_id': id, 'message': text, 'random_id': random_id})
+    else:
+        vk.method('messages.send', {'chat_id': id, 'message': text, 'random_id': random_id, 'attachment': attr})
+
+
+def _get_user_name(self, user_id):
+    request = requests.get("https://vk.com/id" + str(user_id))
+    bs = bs4.BeautifulSoup(request.text, "html.parser")
+    user_name = self._clean_all_tag_from_str(bs.findAll("title")[0])
+    return user_name.split()[0]
+
+
+def t_d(chat_id, msg):
+    try:
+        date1 = msg.lower()[16:]
+        if date1.lower() == "лета" or date1.lower() == "лето":
+            if 5 < datetime.date.today().month < 9:
+                send_messages(chat_id, f'Уже лето!')
+                date1 = datetime.date.today()
+            elif datetime.date.today().month >= 9:
+                d = datetime.date.today().year + 1
+                date1 = datetime.date(d, 6, 1)
+            else:
+                d = datetime.date.today().year
+                date1 = datetime.date(d, 6, 1)
+        elif date1.lower() == "весны" or date1.lower() == "весна":
+            if 2 < datetime.date.today().month < 6:
+                send_messages(chat_id, f'Уже весна!')
+                date1 = datetime.date.today()
+            elif datetime.date.today().month >= 6:
+                d = datetime.date.today().year + 1
+                date1 = datetime.date(d, 3, 1)
+            else:
+                d = datetime.date.today().year
+                date1 = datetime.date(d, 3, 1)
+        elif date1.lower() == "осень" or date1.lower() == "осени":
+            if 8 < datetime.date.today().month < 12:
+                send_messages(chat_id, f'Уже осень!')
+                date1 = datetime.date.today()
+            elif datetime.date.today().month >= 12:
+                d = datetime.date.today().year + 1
+                date1 = datetime.date(d, 9, 1)
+            else:
+                d = datetime.date.today().year
+                date1 = datetime.date(d, 9, 1)
+        elif date1.lower() == "зима" or date1.lower() == "зимы":
+            if (datetime.date.today().month < 3) or (datetime.date.today().month == 12):
+                send_messages(chat_id, f'Уже зима!')
+                date1 = datetime.date.today()
+            else:
+                d = datetime.date.today().year
+                date1 = datetime.date(d, 12, 1)
+        elif date1.lower() == "нового года" or date1.lower() == "новый год":
+            pass
+        else:
+            date1 = [int(x) for x in date1.split('.')]
+            date1 = datetime.date(date1[-1], date1[-2], date1[0])
+        cur_date = datetime.date.today()
+        delta = date1 - cur_date
+        send_messages(chat_id, f'Вам осталось ждать: {delta.days} дней')
+    except ValueError:
+        send_messages(chat_id, f'Х')
+        send_messages(chat_id, f'Неподходящий формат =(( введите дату в формате дд.мм.гггг')
+    except TypeError:
+        send_messages(chat_id, f'Ошибка типа')
+
+
+def abirgame(chat_id, word):
+    if word.lower() == 'ценок':
+        return False
+    else:
+        send_messages(chat_id, word[::-1])
+        return True
+
+
+def goroda(chat_id, text, raund1, word_bef):
+    if raund1 >= 15:
+        send_messages(chat_id, f'Победа!')
+        return [False, 1, word_bef]
+    if not set(text) & set('ауеоэыяию'):
+        send_messages(chat_id, f'Такого слова нет! Как вам не стыдно =((')
+        return [False, 1, word_bef]
+    if text in cur_towns:
+        send_messages(chat_id, f'Ошибка! Ваше слово уже называли. Вы проиграли =((')
+        return [False, 1, word_bef]
+    cur_towns.append(text)
+    if word_bef != '' and text[0].lower() != word_bef[-1]:
+        send_messages(chat_id, f'Ошибка! Ваше слово не подходит для {word_bef} Вы проиграли =((')
+        return [False, 1, word_bef]
+    else:
+        raund1 += 1
+        if text[-1] == 'ь':
+            text += text[-2]
+        town = list(filter(lambda word: word[0] == text[-1].upper(), towns))
+        town = list(filter(lambda word: word not in cur_towns, town))
+        cur_towns.append(town[0])
+        send_messages(chat_id, town[0])
+        return [True, raund1, town[0]]
+
+
+def know_nomber(chat_id, text, num, knownumTrue, raund):
+    if text == num:
+        send_messages(chat_id, 'Верно! Победа =)) С ' + str(raund) + " попытки")
+        return [False, 1]
+    elif text < num:
+        send_messages(chat_id, 'Больше бери!')
+        raund += 1
+    else:
+        send_messages(chat_id, 'Много! Уменьшай')
+        raund += 1
+    return knownumTrue, raund
+
+
+koms = f'Команды - перечень команд\nПрогноз - прогноз на день\nУгадайка - игра про угадывание чисел от 1 до 100\nГорода - игра в города' \
+       f'\nАбырвалг - слова наоборот\nСейчас - дата и время' \
+       f'\nСколько дней до дд.мм.гггг - выводит сколько дней до (кроме дд.мм.гггг можно узнать сколько дней до лета, весны, зимы или осени)' \
+       f''
+towns = ['Абаза', 'Азов', 'Алупка', 'Алагир', 'Аркадак', 'Асино', 'Абакан',
+         'Алдан', 'Аткарск', 'Ардатов', 'Алейск',	'Александровск', 'Ахтубинск', 'Абдулино',
+         'Александров',	'Альметьевск',	'Ачинск', 'Абинск', 'Алексеевка', 'Арск', 'Аргун',
+         'Алексин', 'Анжеро-Судженск', 'Арзамас', 'Адыгейск', 'Амурск', 'Ардон', 'Армавир', 'Агрыз',
+         'Апрелевка', 'Арсеньев', 'Азнакаево', 'Аша', 'Артем', 'Алапаевск', 'Анапа',
+         'Апшеронск', 'Артемовский', 'Ангарск', 'Асбест', 'Архангельск', 'Алушта', 'Армянск',	'Алзамай',
+         'Артемовск', 'Ак-Довурак', 'Александровск-Сахалинский', 'Анива', 'Бабаево', 'Барабинск',
+         'Балашов', 'Батайск', 'Балабаново', 'Брянск', 'Балтийск', 'Березники', 'Бежецк', 'Беслан', 'Благовещенск',
+         'Братск', 'Бобров', 'Белгород', 'Боровичи', 'Барнаул', 'Большой Камень', 'Белово', 'Благовещенск',
+         'Биробиджан', 'Бор', 'Белогорск', 'Белорецк', 'Богданович', 'Борисоглебск', 'Бийск', 'Белореченск',
+         'Бугульма', 'Буденновск', 'Буй', 'Бугуруслан', 'Белозерск', 'Баймак', 'Багратионовск', 'Бакал', 'Бородино',
+         'Богучар', 'Балаково', 'Барыш', 'Белоусово', 'Белев', 'Бахчисарай', 'Валуйки', 'Великий Новгород',
+         'Великие Луки', 'Вельск', 'Воркута', 'Верещагино', 'Великий Устюг', 'Верхний Уфалей', 'Вольск', 'Владивосток',
+         'Воронеж', 'Владикавказ', 'Волхов', 'Вичуга', 'Всеволожск'	, 'Владимир', 'Воскресенск', 'Вятские Поляны',
+         'Волоколамск', 'Волгореченск', 'Волгоград', 'Вязьма', 'Волжск', 'Волгодонск', 'Волжский', 'Вологда',
+         'Гагарин', 'Гай', 'Голицыно', 'Гатчина', 'Галич', 'Глазов', 'Губкин', 'Гаврилов-Ям', 'Горно-Алтайск',
+         'Городец', 'Гороховец', 'Грозный', 'Горячий Ключ', 'Гусь-Хрустальный', 'Геленджик', 'Гудермес', 'Грязи',
+         'Гурьевск', 'Георгиевск', 'Гусев', 'Грязовец', 'Гусиноозерск', 'Гаджиево', 'Гдов', 'Гвардейск',
+         'Гаврилов Посад', 'Грайворон', 'Горбатов', 'Городище', 'Дальнегорск', 'Дубна',  'Данков', 'Дедовск', 'Дюртюли',
+         'Дагестанские Огни', 'Димитровград', 'Дзержинск', 'Дербент', 'Дмитров', 'Дивногорск', 'Домодедово',
+         'Десногорск', 'Долгопрудный', 'Добрянка', 'Донецк', 'Дудинка', 'Дятьково', 'Демидов', 'Дно', 'Дмитровск',
+         'Дорогобуж', 'Духовщина',	'Долинск', 'Дигора', 'Дегтярск', 'Егорьевск', 'Ершов', 'Ефремов', 'Ейск', 'Елизово',
+         'Ессентуки', 'Елабуга', 'Еманжелинск', 'Екатеринбург', 'Енисейск', 'Евпатория', 'Ельня', 'Елец', 'Ермолино',
+         'Емва', 'Железногорск', 'Железногорск-Илимский', 'Железнодорожный', 'Жигулевск', 'Железноводск', 'Жердевка',
+         'Жуковка',	'Жирновск', 'Жуковский', 'Жиздра', 'Жуков', 'Заволжье', 'Златоуст', 'Заводоуковск', 'Знаменск',
+         'Зарайск', 'Заволжск', 'Западная Двина'	, 'Зверево', 'Звенигород', 'Заринск', 'Заозерск', 'Зеленогорск',
+         'Звенигово', 'Зеленодольск', 'Зуевка', 'Зерноград', 'Зеленоградск', 'Зеленокумск', 'Злынка', 'Змеиногорск',
+         'Зима', 'Зубцов', 'Зея', 'Задонск', 'Закаменск', 'Зеленоград', 'Завитинск', 'Ивантеевка', 'Ивангород',
+         'Иваново', 'Ижевск', 'Инза', 'Инта', 'Ипатово', 'Избербаш', 'Ирбит', 'Искитим', 'Иркутск', 'Ишим', 'Инсар',
+         'Иннополис', 'Инкерман', 'Йошкар-Ола', 'Каменка', 'Киров', 'Камень-на-Оби', 'Калининград', 'Комсомольск',
+         'Калуга', 'Ковров', 'Курганинск', 'Каменногорск', 'Курчатов', 'Камышин', 'Курск', 'Кострома', 'Крымск',
+         'Краснодар', 'Кяхта', 'Киров', 'Красноярск', 'Кызыл', 'Кисловодск', 'Королев', 'Комсомольск-на-Амуре',
+         'Лангепас', 'Лабинск', 'Лахденпохья', 'Лениногорск', 'Лакинск', 'Лесозаводск', 'Лесосибирск', 'Ливны',
+         'Липки', 'Ликино-Дулево', 'Лобня', 'Лыткарино', 'Людиново', 'Липецк', 'Лодейное Поле', 'Магадан', 'Махачкала',
+         'Майкоп', 'Магнитогорск', 'Малгобек', 'Мариинск', 'Медвежьегорск', 'Малая Вишера', 'Медногорск', 'Межгорье',
+         'Междуреченск', 'Миллерово', 'Михайлов', 'Мензелинск', 'Можайск', 'Москва', 'Мценск', 'Миньяр', 'Мураши',
+         'Мурманск', 'Мытищи', 'Муром', 'Мышкин', 'Набережные Челны', 'Невинномысск', 'Нальчик', 'Неман',
+         'Новокубанск', 'Нижневартовск', 'Новокузнецк', 'Нижнекамск', 'Новый Оскол', 'Нижний Новгород',
+         'Новосокольники', 'Ногинск', 'Новороссийск', 'Нижний Тагил', 'Норильск', 'Новосибирск', 'Нурлат',
+         'Новочеркасск', 'Николаевск-на-Амуре', 'Нытва', 'Обнинск', 'Оса', 'Оренбург', 'Омутнинск', 'Осинники',
+         'Острогожск', 'Октябрьск', 'Омск', 'Одинцово', 'Орел', 'Озерск', 'Осташков', 'Орск', 'Пенза', 'Петрозаводск',
+         'Печора', 'Павловск', 'Плес', 'Подпорожье', 'Петровск', 'Пушкино', 'Подольск', 'Пугачев', 'Приволжск',
+         'Петушки', 'Полярные Зори', 'Перевоз', 'Правдинск', 'Поронайск', 'Псков', 'Приозерск', 'Пущино', 'Пятигорск',
+         'Покровск', 'Приморск', 'Покров', 'Ржев', 'Рыбное', 'Ртищево', 'Рузаевка', 'Ростов', 'Ростов-на-Дону',
+         'Рубцовск', 'Ряжск', 'Рыбинск', 'Салават', 'Саранск', 'Сальск', 'Саратов', 'Самара', 'Санкт-Петербург',
+         'Северодвинск', 'Смоленск', 'Старая Русса', 'Сергиев Посад', 'Сокол', 'Серпухов', 'Старый Оскол',
+         'Снежногорск', 'Солнечногорск', 'Сургут', 'Сосногорск', 'Сортавала', 'Сочи', 'Сорочинск', 'Среднеуральск',
+         'Сосновоборск', 'Сыктывкар', 'Симферополь', 'Судак', 'Таштагол', 'Талдом', 'Таганрог', 'Тамбов', 'Талица',
+         'Тайшет', 'Татарск', 'Темников', 'Томари', 'Тобольск', 'Торжок', 'Троицк', 'Тольятти', 'Томск', 'Торопец',
+         'Тутаев', 'Тихвин', 'Тотьма', 'Тихорецк', 'Тула', 'Тында', 'Тюкалинск', 'Туринск', 'Углич', 'Урус-Мартан',
+         'Уварово', 'Уржум', 'Урюпинск', 'Улан-Удэ', 'Усинск', 'Усть-Кут', 'Ульяновск', 'Усть-Лабинск', 'Уфа', 'Ухта',
+         'Уссурийск', 'Углегорск', 'Фокино', 'Фатеж', 'Фролово', 'Феодосия', 'Фрязино', 'Фурманов', 'Хадыженск',
+         'Хасавюрт', 'Харовск', 'Ханты-Мансийск', 'Хабаровск', 'Харабали', 'Холмск', 'Хвалынск', 'Холм', 'Хотьково',
+         'Химки	', 'Хилок', 'Цивильск', 'Циолковский', 'Цимлянск', 'Чаплыгин', 'Чапаевск', 'Чегем', 'Черноголовка',
+         'Челябинск', 'Черногорск', 'Череповец', 'Черкесск', 'Чехов', 'Черняховск', 'Чита', 'Чудово', 'Чкаловск',
+         'Чухлома', 'Чулым', 'Чадан', 'Шахтерск', 'Шагонар', 'Шатура', 'Шахты', 'Шахунья', 'Шелехов', 'Шацк', 'Шилка',
+         'Шимановск', 'Шлиссельбург', 'Шуя', 'Шумиха', 'Щекино', 'Щербинка', 'Щелкино', 'Щелково', 'Щучье',
+         'Электрогорск', 'Электроугли', 'Энгельс', 'Элиста', 'Югорск', 'Южа', 'Южно-Сахалинск', 'Южноуральск',
+         'Юрга', 'Юрьевец', 'Юрьев-Польский', 'Южно-Сухокумск', 'Юхнов', 'Ялуторовск', 'Ялта', 'Ядрин', 'Янаул',
+         'Ярославль', 'Яранск', 'Якутск', 'Яровое', 'Ярцево', 'Ясногорск', 'Яхрома']
+knownumTrue, gorodaTrue, abirTrue = False, False, False
+raund, raund1 = 0, 0
+word_b = ''
+cur_towns = []
+futurum = ['Вас ждет хороший день =)) ', 'Остерегайтесь кирпичей, летящих на голову', 'Спокойный скучный день, не отчаивайтесь', 'День готовит вам много сюрпризов', 'Вы готовите много сюрпризов дню']
+global num
+image_urls = ['https://images.unsplash.com/photo-1604699229817-27301bdfed68?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTd8fGhhcHB5fGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60',
+              'https://images.unsplash.com/photo-1498673394965-85cb14905c89?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MjV8fGhhcHB5fGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60',
+              'https://images.unsplash.com/photo-1513151233558-d860c5398176?ixid=MnwxMjA3fDB8MHxzZWFyY2h8NjR8fGhhcHB5fGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60',
+              'https://images.unsplash.com/photo-1486485764572-92b96f21882a?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTAyfHxoYXBweXxlbnwwfHwwfHw%3D&auto=format&fit=crop&w=400&q=60',
+              'https://images.unsplash.com/photo-1601011850287-43e30b7db748?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTYzfHxoYXBweXxlbnwwfHwwfHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60',
+              'https://images.unsplash.com/photo-1559740451-b895701fa4b5?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MjQ2fHxoYXBweXxlbnwwfHwwfHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60']
+
+
+for event in longpoll.listen():
+    print(event.type)
+    if event.type == VkBotEventType.MESSAGE_NEW:
+        if event.from_chat:
+            chat_id = event.chat_id
+            msg = event.object.message["text"].lower()
+            bad_words = ['лень', "тоска", "уныние"]
+            if msg == "привет":
+                send_messages(chat_id, "Приветик")
+            try:
+                dey = event.message.action['type']
+                invite_id = event.message.action['member_id']
+            except:
+                dey = ''
+                invite_id = -100
+            if dey == 'chat_invite_user':
+                send_messages(chat_id, f"Приветик, @id{invite_id}!")
+            elif set(msg.split()) & set(bad_words):
+                send_messages(chat_id, 'не надо так =((')
+            elif msg.lower() == "команды":
+                attachments = []
+                image_url = random.choice(image_urls)
+                image = session.get(image_url, stream=True)
+                photo = upload.photo_messages(photos=image.raw)[0]
+                attachments.append(
+                    'photo{}_{}'.format(photo['owner_id'], photo['id'])
+                )
+                send_messages(chat_id, koms, ','.join(attachments))
+            elif msg.lower() == "грустно":
+                send_messages(chat_id, f'Все будет хорошо =))')
+            elif msg.lower() == "весело":
+                send_messages(chat_id, f'Так держать! Полный вперед! На аборда-аж!')
+            elif msg.lower() == "угадайка":
+                send_messages(chat_id, f'Угадайка. Поехали')
+                num = random.randint(1, 100)
+                raund = 1
+                knownumTrue = True
+            elif knownumTrue and msg.isdigit():
+                knownumTrue, raund = know_nomber(chat_id, int(msg), num, knownumTrue, raund)
+            elif msg.lower() == "прогноз":
+                send_messages(chat_id, random.choice(futurum))
+            elif msg.lower() == "города":
+                raund1 = 1
+                gorodaTrue = True
+                send_messages(chat_id, f'Города... Съезжаемся. Начинайте с "Мой город это - ...". Ваш ход =))')
+                cur_towns = []
+                word_b = ''
+            elif msg.lower().count("сколько дней до"):
+                t_d(chat_id, msg)
+            elif msg.lower().count('мой город это - ') and gorodaTrue:
+                t = msg[16:]
+                gorodaTrue, raund1, word_b = goroda(chat_id, t, raund1, word_b)
+            elif msg.lower() == "абырвалг":
+                abirTrue = True
+                send_messages(chat_id, f'Время пришельцев! Торобоан аволс мешип\n *ценок - конец')
+            elif abirTrue:
+                abirTrue = abirgame(chat_id, msg)
+            elif msg.lower() == "сейчас":
+                send_messages(chat_id, str(datetime.datetime.today().strftime("время: %H:%M:%S дата: %d.%m.%Y")))
