@@ -81,7 +81,6 @@ def t_d(chat_id, msg):
         delta = date1 - cur_date
         send_messages(chat_id, f'Вам осталось ждать: {delta.days} дней')
     except ValueError:
-        send_messages(chat_id, f'Х')
         send_messages(chat_id, f'Неподходящий формат =(( введите дату в формате дд.мм.гггг')
     except TypeError:
         send_messages(chat_id, f'Ошибка типа')
@@ -133,26 +132,14 @@ def know_nomber(chat_id, text, num, knownumTrue, raund):
     return knownumTrue, raund
 
 
-koms = f'Команды - перечень команд\nПрогноз - прогноз на день\nУгадайка - игра про угадывание чисел от 1 до 100\nГорода - игра в города' \
-       f'\nАбырвалг - слова наоборот\nПосчитай - выводит значение выражения\nСейчас - дата и время' \
-       f'\nСколько дней до дд.мм.гггг - выводит сколько дней до (кроме дд.мм.гггг можно узнать сколько дней до лета, весны, зимы или осени)' \
-       f''
+koms = f'Команды - перечень команд\nПрогноз - прогноз на день\nУгадайка - игра про угадывание чисел от 1 до 100\nГорода - игра в города\nАбырвалг - слова наоборот\nПосчитай - выводит значение выражения\nСейчас - дата и время\nСколько дней до дд.мм.гггг - выводит сколько дней до (кроме дд.мм.гггг можно узнать сколько дней до лета, весны, зимы или осени)' \
 knownumTrue, gorodaTrue, abirTrue = False, False, False
 raund, raund1 = 0, 0
 word_b = ''
 cur_towns = []
-futurum = ['Вас ждет хороший день =)) ', 'Остерегайтесь кирпичей, летящих на голову', 'Спокойный скучный день, не отчаивайтесь',
-           'День готовит вам много сюрпризов', 'Вы готовите много сюрпризов дню', 'Сегодня вас ожидает совершенно новое открытие',
-           'Приложив должные усилия, вы сумеете решить множество давних проблем', 'Поберегите свое здоровье, отдыхотдыхотдых',
-           'Полезный день']
+futurum = ['Вас ждет хороший день =)) ', 'Остерегайтесь кирпичей, летящих на голову', 'Спокойный скучный день, не отчаивайтесь', 'День готовит вам много сюрпризов', 'Вы готовите много сюрпризов дню', 'Сегодня вас ожидает совершенно новое открытие', 'Приложив должные усилия, вы сумеете решить множество давних проблем', 'Поберегите свое здоровье, отдыхотдыхотдых', 'Полезный день']
 global num
-image_urls = ['https://images.unsplash.com/photo-1604699229817-27301bdfed68?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTd8fGhhcHB5fGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60',
-              'https://images.unsplash.com/photo-1498673394965-85cb14905c89?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MjV8fGhhcHB5fGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60',
-              'https://images.unsplash.com/photo-1513151233558-d860c5398176?ixid=MnwxMjA3fDB8MHxzZWFyY2h8NjR8fGhhcHB5fGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60',
-              'https://images.unsplash.com/photo-1486485764572-92b96f21882a?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTAyfHxoYXBweXxlbnwwfHwwfHw%3D&auto=format&fit=crop&w=400&q=60',
-              'https://images.unsplash.com/photo-1601011850287-43e30b7db748?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTYzfHxoYXBweXxlbnwwfHwwfHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60',
-              'https://images.unsplash.com/photo-1559740451-b895701fa4b5?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MjQ2fHxoYXBweXxlbnwwfHwwfHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60']
-
+image_urls = ['https://images.unsplash.com/photo-1604699229817-27301bdfed68?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTd8fGhhcHB5fGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60', 'https://images.unsplash.com/photo-1498673394965-85cb14905c89?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MjV8fGhhcHB5fGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60', 'https://images.unsplash.com/photo-1513151233558-d860c5398176?ixid=MnwxMjA3fDB8MHxzZWFyY2h8NjR8fGhhcHB5fGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60', 'https://images.unsplash.com/photo-1486485764572-92b96f21882a?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTAyfHxoYXBweXxlbnwwfHwwfHw%3D&auto=format&fit=crop&w=400&q=60', 'https://images.unsplash.com/photo-1601011850287-43e30b7db748?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTYzfHxoYXBweXxlbnwwfHwwfHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60', 'https://images.unsplash.com/photo-1559740451-b895701fa4b5?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MjQ2fHxoYXBweXxlbnwwfHwwfHw%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60']
 im_uri = ['https://images.unsplash.com/photo-1509909756405-be0199881695?ixid=MnwxMjA3fDB8MHxzZWFyY2h8M3x8aGFwcHl8ZW58MHx8MHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60',
           'https://images.unsplash.com/photo-1509723169456-6eab9d45c612?ixid=MnwxMjA3fDB8MHxzZWFyY2h8ODF8fGFkdmVudHVyZXN8ZW58MHx8MHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60',
           'https://images.unsplash.com/photo-1516571507564-ccfe0e735a7d?ixid=MnwxMjA3fDB8MHxzZWFyY2h8MTIyfHxhZHZlbnR1cmVzfGVufDB8fDB8fA%3D%3D&ixlib=rb-1.2.1&auto=format&fit=crop&w=400&q=60',
@@ -185,9 +172,7 @@ for event in longpoll.listen():
                 image_url = random.choice(image_urls)
                 image = session.get(image_url, stream=True)
                 photo = upload.photo_messages(photos=image.raw)[0]
-                attachments.append(
-                    'photo{}_{}'.format(photo['owner_id'], photo['id'])
-                )
+                attachments.append('photo{}_{}'.format(photo['owner_id'], photo['id']))
                 send_messages(chat_id, koms, ','.join(attachments))
             elif msg.lower() == "грустно":
                 send_messages(chat_id, f'Все будет хорошо =))')
@@ -205,9 +190,7 @@ for event in longpoll.listen():
                 image_url = random.choice(im_uri)
                 image = session.get(image_url, stream=True)
                 photo = upload.photo_messages(photos=image.raw)[0]
-                attachments.append(
-                    'photo{}_{}'.format(photo['owner_id'], photo['id'])
-                )
+                attachments.append('photo{}_{}'.format(photo['owner_id'], photo['id']))
                 send_messages(chat_id,  random.choice(futurum), ','.join(attachments))
             elif msg.lower() == "города":
                 raund1 = 1
